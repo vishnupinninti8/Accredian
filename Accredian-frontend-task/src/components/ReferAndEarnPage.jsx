@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
+import axios from 'axios';
 import {
   Dialog,
   DialogContent,
@@ -24,13 +25,14 @@ const ReferAndEarnPage = () => {
   const [formData, setFormData] = useState({
     referrerName: '',
     referrerEmail: '',
-    refereeName: '',
-    refereeEmail: '',
-    courseInterest: ''
+    friendName: '',
+    friendEmail: '',
+    courseName: ''
   });
   
   const [errors, setErrors] = useState({});
   const [isOpen, setIsOpen] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({ loading: false, error: null });
 
   const validateForm = () => {
     const newErrors = {};
@@ -40,30 +42,47 @@ const ReferAndEarnPage = () => {
     } else if (!/\S+@\S+\.\S+/.test(formData.referrerEmail)) {
       newErrors.referrerEmail = 'Invalid email';
     }
-    if (!formData.refereeName) newErrors.refereeName = 'Required';
-    if (!formData.refereeEmail) {
-      newErrors.refereeEmail = 'Required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.refereeEmail)) {
-      newErrors.refereeEmail = 'Invalid email';
+    if (!formData.friendName) newErrors.friendName = 'Required';
+    if (!formData.friendEmail) {
+      newErrors.friendEmail = 'Required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.friendEmail)) {
+      newErrors.friendEmail = 'Invalid email';
     }
-    if (!formData.courseInterest) newErrors.courseInterest = 'Required';
+    if (!formData.courseName) newErrors.courseName = 'Required';
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      console.log('Form submitted:', formData);
-      setIsOpen(false);
-      setFormData({
-        referrerName: '',
-        referrerEmail: '',
-        refereeName: '',
-        refereeEmail: '',
-        courseInterest: ''
-      });
+      setSubmitStatus({ loading: true, error: null });
+      try {
+        const response = await axios.post('/api/refer', {
+          referrerName: formData.referrerName,
+          referrerEmail: formData.referrerEmail,
+          friendName: formData.friendName,
+          friendEmail: formData.friendEmail,
+          courseName: formData.courseName
+        });
+        console.log('Referral submitted successfully:', response.data);
+        setIsOpen(false);
+        setFormData({
+          referrerName: '',
+          referrerEmail: '',
+          friendName: '',
+          friendEmail: '',
+          courseName: ''
+        });
+      } catch (error) {
+        console.error('Error submitting referral:', error);
+        setSubmitStatus({ 
+          loading: false, 
+          error: error.response?.data?.message || 'Failed to submit referral. Please try again.' 
+        });
+      }
+      setSubmitStatus({ loading: false, error: null });
     }
   };
 
@@ -161,44 +180,52 @@ const ReferAndEarnPage = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="refereeName">Friend's Name</Label>
+                <Label htmlFor="friendName">Friend's Name</Label>
                 <Input
-                  id="refereeName"
-                  name="refereeName"
-                  value={formData.refereeName}
+                  id="friendName"
+                  name="friendName"
+                  value={formData.friendName}
                   onChange={handleChange}
-                  className={errors.refereeName ? 'border-red-500' : ''}
+                  className={errors.friendName ? 'border-red-500' : ''}
                 />
-                {errors.refereeName && <p className="text-red-500 text-sm">{errors.refereeName}</p>}
+                {errors.friendName && <p className="text-red-500 text-sm">{errors.friendName}</p>}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="refereeEmail">Friend's Email</Label>
+                <Label htmlFor="friendEmail">Friend's Email</Label>
                 <Input
-                  id="refereeEmail"
-                  name="refereeEmail"
+                  id="friendEmail"
+                  name="friendEmail"
                   type="email"
-                  value={formData.refereeEmail}
+                  value={formData.friendEmail}
                   onChange={handleChange}
-                  className={errors.refereeEmail ? 'border-red-500' : ''}
+                  className={errors.friendEmail ? 'border-red-500' : ''}
                 />
-                {errors.refereeEmail && <p className="text-red-500 text-sm">{errors.refereeEmail}</p>}
+                {errors.friendEmail && <p className="text-red-500 text-sm">{errors.friendEmail}</p>}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="courseInterest">Course of Interest</Label>
+                <Label htmlFor="courseName">Course Name</Label>
                 <Input
-                  id="courseInterest"
-                  name="courseInterest"
-                  value={formData.courseInterest}
+                  id="courseName"
+                  name="courseName"
+                  value={formData.courseName}
                   onChange={handleChange}
-                  className={errors.courseInterest ? 'border-red-500' : ''}
+                  className={errors.courseName ? 'border-red-500' : ''}
                 />
-                {errors.courseInterest && <p className="text-red-500 text-sm">{errors.courseInterest}</p>}
+                {errors.courseName && <p className="text-red-500 text-sm">{errors.courseName}</p>}
               </div>
               
-              <Button type="submit" className="w-full">
-                Submit Referral
+              {submitStatus.error && (
+                <p className="text-red-500 text-sm">{submitStatus.error}</p>
+              )}
+              
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={submitStatus.loading}
+              >
+                {submitStatus.loading ? 'Submitting...' : 'Submit Referral'}
               </Button>
             </form>
           </DialogContent>

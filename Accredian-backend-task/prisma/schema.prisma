@@ -12,3 +12,13 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model Referral {
+  id            Int      @id @default(autoincrement())
+  referrerName  String   // changed from referrerName
+  referrerEmail String   // changed from referrerEmail
+  friendName    String
+  friendEmail   String
+  courseName    String
+  createdAt     DateTime @default(now())
+}
